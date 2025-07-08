@@ -57,7 +57,8 @@ app.post("/verify", async (req, res) => {
       bookingData.paymentId = razorpay_payment_id;
 
       // ✅ Send email here
-      await sendBookingEmail(bookingData, email);
+      await sendBookingEmail(bookingData, email); // to user
+      await sendBookingEmail(bookingData, "devanshbusinesswork@gmail.com", true); // to admin
       
       res.json({ success: true });
     } catch (err) {

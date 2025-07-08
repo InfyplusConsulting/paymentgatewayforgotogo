@@ -40,3 +40,33 @@
 // }
 
 // sendTestEmail();
+
+// const sendBookingEmail = require("./utils/sendBookingEmail"); // adjust the path if needed
+
+// const testBookingData = {
+//   ticketNumber: "G2G123456",
+//   names: ["Devansh Rajput", "John Doe"],
+//   phones: ["9876543210", "9123456789"],
+//   pickupDate: "2025-07-09",
+//   pickupLocation: "Delhi IGI Airport T1",
+//   boardingTime: "05:30 AM",
+//   terminal: "T3",
+//   serviceType: "Airport Drop",
+//   amountPaid: 899,
+//   paymentId: "pay_LoREMipsUM123"
+// };
+
+// async function test() {
+//   try {
+//     await sendBookingEmail(testBookingData, "devanshrajput032006@gmail.com", false); // change this email
+//     console.log("✅ Email sent successfully to user");
+
+//     await sendBookingEmail(testBookingData, "devanshbusinesswork@gmail.com", true); // test admin version
+//     console.log("✅ Email sent successfully to admin");
+//   } catch (error) {
+//     console.error("❌ Email sending failed:", error.message);
+//   }
+// }
+
+// test();
+
