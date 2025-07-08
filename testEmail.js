@@ -4,8 +4,8 @@
 
 // const transporter = nodemailer.createTransport({
 //   host: "smtp.secureserver.net",
-//   port: 465,
-//   secure: true,
+//   port: 587,
+//   secure: false,
 //   auth: {
 //     user: "bookings@gotogotravelsolutions.com",
 //     pass: process.env.EMAIL_PASS,

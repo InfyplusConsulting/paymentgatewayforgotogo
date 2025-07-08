@@ -2,8 +2,8 @@ const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
   host: "smtp.secureserver.net", // GoDaddy SMTP
-  port: 465,                      // SSL port
-  secure: true,                  // true for SSL
+  port: 587,
+  secure: false,                  // true for SSL
   auth: {
     user: "bookings@gotogotravelsolutions.com",     // GoDaddy email
     pass: process.env.EMAIL_PASS,               // App password or normal password
