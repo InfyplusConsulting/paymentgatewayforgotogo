@@ -40,13 +40,15 @@ async function sendBookingEmail(bookingData, toEmail, isAdmin = false) {
     ? `🛎️ New Booking - Ticket #${ticketNumber}`
     : `🎫 Booking Confirmed - Ticket #${ticketNumber}`;
 
+  const headingText = isAdmin ? "🛎️ New Booking Confirm" : "✅ Booking Confirmed";
+
   const htmlContent = `
 <div style="font-family: 'Segoe UI', sans-serif; max-width: 600px; margin: auto; padding: 30px; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #ffffff; color: #333;">
   <div style="text-align: center;">
     <img src="https://www.gotogo.in/assets/GoToGo%20Final%20Logos/GoToGo%20Final%20Logos/G2G%20Fleet%20-%20Inverse%20Black.png" alt="GoToGo Logo" style="width: 100px;" />
   </div>
 
-  <h2 style="color: #0c52a2; text-align: center; margin-bottom: 20px;">✅ Booking Confirmed</h2>
+  <h2 style="color: #0c52a2; text-align: center; margin-bottom: 20px;">${headingText}</h2>
 
   <p style="font-size: 16px;"><strong>Ticket No:</strong> ${ticketNumber}</p>
   <p style="font-size: 16px;"><strong>Passengers:</strong></p>

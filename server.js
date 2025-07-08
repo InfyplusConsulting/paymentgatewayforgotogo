@@ -25,42 +25,22 @@ const razorpay = new Razorpay({
 
 // Create Order
 app.post("/api/create-order", async (req, res) => {
-  const { amount, currencyType } = req.body;
+  const { amount } = req.body;
 
   if (!amount) return res.status(400).json({ error: "Amount is required" });
 
   try {
-    // 💱 Default to INR if not USD
-    let finalAmountINR = amount;
-    let exchangeRateUsed = null;
-
-    if (currencyType === "USD") {
-      // Example: manually set exchange rate (or later use real-time fetch)
-      const exchangeRate = 83.5; // 1 USD = 83.5 INR
-      finalAmountINR = Math.round(amount * exchangeRate); // Round to avoid paise fractions
-      exchangeRateUsed = exchangeRate;
-    }
-
-    console.log("🧾 Order Summary:");
-    console.log("Currency:", currencyType || "INR");
-    console.log("Amount Received:", amount);
-    console.log("Final INR Amount:", finalAmountINR);
-    if (exchangeRateUsed) console.log("Exchange Rate Used:", exchangeRateUsed);
-
     const options = {
-      amount: finalAmountINR * 100, // paise
+      amount: amount * 100, // ₹ to paise
       currency: "INR",
       receipt: `receipt_${Date.now()}`,
     };
-
     const order = await razorpay.orders.create(options);
     res.json(order);
   } catch (err) {
-    console.error("❌ Order creation failed:", err.message);
     res.status(500).json({ error: "Order creation failed", message: err.message });
   }
 });
-
 
 // Verify Signature
 const sendBookingEmail = require("./utils/sendBookingEmail");
