@@ -1,22 +1,22 @@
 const nodemailer = require("nodemailer");
 
-// const transporter = nodemailer.createTransport({
-//   host: "smtp.secureserver.net", // GoDaddy SMTP
-//   port: 465,                      // SSL port
-//   secure: true,                  // true for SSL
-//   auth: {
-//     user: "bookings@gotogotravelsolutions.com",     // GoDaddy email
-//     pass: process.env.EMAIL_PASS,               // App password or normal password
-//   },
-// });
-
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.secureserver.net", // GoDaddy SMTP
+  port: 465,                      // SSL port
+  secure: true,                  // true for SSL
   auth: {
-    user: "devanshrajput032006@gmail.com",
-    pass: "isfy nmxh qvdx tuxg", // NOT your real password
+    user: "bookings@gotogotravelsolutions.com",     // GoDaddy email
+    pass: process.env.EMAIL_PASS,               // App password or normal password
   },
 });
+
+// const transporter = nodemailer.createTransport({
+//   service: "gmail",
+//   auth: {
+//     user: "devanshrajput032006@gmail.com",
+//     pass: "isfy nmxh qvdx tuxg", // NOT your real password
+//   },
+// });
 
 async function sendBookingEmail(bookingData, toEmail) {
   const {
