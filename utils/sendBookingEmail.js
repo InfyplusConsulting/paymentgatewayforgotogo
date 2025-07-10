@@ -3,24 +3,26 @@
 const nodemailer = require("nodemailer");
 
 // ✅ Option 1: GoDaddy SMTP (Comment if not used)
-// const transporter = nodemailer.createTransport({
-//   host: "smtp.secureserver.net",
-//   port: 587,
-//   secure: false,
-//   auth: {
-//     user: "bookings@gotogotravelsolutions.com",
-//     pass: process.env.EMAIL_PASS,
-//   },
-// });
+const transporter = nodemailer.createTransport({
+  host: "sg2plzcpnl506974.prod.sin2.secureserver.net", // from your image
+  port: 465,
+  secure: true, // SSL
+  auth: {
+    user: "bookings@gotogotravelsolutions.com",
+    pass: process.env.EMAIL_PASS, // make sure this is correct
+  },
+  logger: true,
+  debug: true,
+});
 
 // ✅ Option 2: Gmail SMTP (Active)
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: "devanshrajput032006@gmail.com",
-    pass: "isfy nmxh qvdx tuxg", 
-  },
-});
+// const transporter = nodemailer.createTransport({
+//   service: "gmail",
+//   auth: {
+//     user: "devanshrajput032006@gmail.com",
+//     pass: "isfy nmxh qvdx tuxg", 
+//   },
+// });
 
 async function sendBookingEmail(bookingData, toEmail, isAdmin = false) {
   const {
