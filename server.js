@@ -7,8 +7,6 @@ const crypto = require("crypto");
 const app = express();
 app.use(cors({
   origin: [
-    "http://localhost:5500",
-    "http://127.0.0.1:5500",
     "https://www.gotogo.in",
     "https://testsitesonweb.netlify.app"
   ],
@@ -58,7 +56,7 @@ app.post("/verify", async (req, res) => {
 
       // ✅ Send email here
       await sendBookingEmail(bookingData, email); // to user
-      await sendBookingEmail(bookingData, "devanshbusinesswork@gmail.com", true); // to admin
+      await sendBookingEmail(bookingData, "bookings@gotogotravelsolutions.com", true); // to admin
       
       res.json({ success: true });
     } catch (err) {
