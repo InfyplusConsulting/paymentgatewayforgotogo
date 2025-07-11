@@ -7,7 +7,6 @@ const crypto = require("crypto");
 const app = express();
 app.use(cors({
   origin: [
-    "http://127.0.0.1:5501",
     "https://www.gotogo.in",
     "https://testsitesonweb.netlify.app"
   ],
@@ -30,8 +29,8 @@ app.post("/api/create-order", async (req, res) => {
 
   try {
     const options = {
-      amount, // 🟢 Already in smallest unit (USD cents or INR paise)
-      currency: currency, // 🟢 Default to INR if not provided
+      amount: amount * 100, // ₹ to paise
+      currency: "INR",
       receipt: `receipt_${Date.now()}`,
     };
     const order = await razorpay.orders.create(options);
