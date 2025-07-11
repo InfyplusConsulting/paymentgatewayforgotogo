@@ -30,7 +30,7 @@ app.post("/api/create-order", async (req, res) => {
   try {
     const options = {
       amount, // 🟢 Already in smallest unit (USD cents or INR paise)
-      currency: currency || "USD", // 🟢 Default to INR if not provided
+      currency: currency, // 🟢 Default to INR if not provided
       receipt: `receipt_${Date.now()}`,
     };
     const order = await razorpay.orders.create(options);
