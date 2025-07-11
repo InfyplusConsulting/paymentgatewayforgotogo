@@ -15,14 +15,6 @@ const transporter = nodemailer.createTransport({
   debug: true,
 });
 
-// ✅ Option 2: Gmail SMTP (Active)
-// const transporter = nodemailer.createTransport({
-//   service: "gmail",
-//   auth: {
-//     user: "devanshrajput032006@gmail.com",
-//     pass: "isfy nmxh qvdx tuxg", 
-//   },
-// });
 
 async function sendBookingEmail(bookingData, toEmail, isAdmin = false) {
   const {
@@ -42,7 +34,7 @@ async function sendBookingEmail(bookingData, toEmail, isAdmin = false) {
     ? `🛎️ New Booking - Ticket #${ticketNumber}`
     : `🎫 Booking Confirmed - Ticket #${ticketNumber}`;
 
-  const headingText = isAdmin ? "🛎️ New Booking Confirm" : "✅ Booking Confirmed";
+  const headingText = isAdmin ? "🛎️ New Booking Confirm" : `✅${bookingData.names[0]} Your Booking is Confirmed`;
 
   const htmlContent = `
 <div style="font-family: 'Segoe UI', sans-serif; max-width: 600px; margin: auto; padding: 30px; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #ffffff; color: #333;">

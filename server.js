@@ -7,9 +7,11 @@ const crypto = require("crypto");
 const app = express();
 app.use(cors({
   origin: [
-    "https://www.gotogo.in",
-    "https://testsitesonweb.netlify.app"
-  ],
+  "https://www.gotogo.in",
+  "https://testsitesonweb.netlify.app",
+  "http://127.0.0.1:5501"
+],
+
   credentials: true
 }));
 
