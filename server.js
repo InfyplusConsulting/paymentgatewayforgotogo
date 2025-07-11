@@ -8,7 +8,7 @@ const app = express();
 app.use(cors({
   origin: [
   "https://www.gotogo.in",
-  "https://testsitesonweb.netlify.app",
+  "https://gotogoin.netlify.app",
   "http://127.0.0.1:5501"
 ],
 
@@ -31,7 +31,7 @@ app.post("/api/create-order", async (req, res) => {
 
   try {
     const options = {
-      amount: amount * 100, // ₹ to paise
+      amount: amount * 100, // cents
       currency: "INR",
       receipt: `receipt_${Date.now()}`,
     };
