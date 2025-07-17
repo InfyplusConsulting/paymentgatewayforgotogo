@@ -10,7 +10,7 @@ app.use(cors({
   "https://www.gotogo.in",
   "https://gotogoin.netlify.app",
   "http://127.0.0.1:5501",
-  "https://testingwebsitessites.netlify.app/"
+  "https://testingwebsitessites.netlify.app"
 ],
 
   credentials: true
