@@ -13,13 +13,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// const transporter = nodemailer.createTransport({
-//   service: "gmail",
-//   auth: {
-//     user: "devanshrajput032006@gmail.com",
-//     pass: "pyih qahr vzeq dabh", 
-//   },
-// });
+
 
 async function sendBookingEmail(bookingData, toEmail, isAdmin = false) {
   const {

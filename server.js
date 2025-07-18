@@ -25,6 +25,11 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
+app.get("/ping", (req, res) => {
+  res.status(200).send("✅ Server is awake!");
+});
+
+
 // Create Order
 app.post("/api/create-order", async (req, res) => {
   const { amount } = req.body;
