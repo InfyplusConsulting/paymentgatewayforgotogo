@@ -8,8 +8,9 @@ const app = express();
 app.use(cors({
   origin: [
   "https://www.gotogo.in",
+  "https://gotogo.in",
   "https://gotogoin.netlify.app",
-  "http://127.0.0.1:5501",
+  "http://127.0.0.1:5502",
   "https://testingwebsitessites.netlify.app"
 ],
 
@@ -58,12 +59,15 @@ app.post("/verify", async (req, res) => {
       bookingData.paymentId = razorpay_payment_id;
 
       // ✅ Send email here
+      console.log("🚀 Sending user email to:", email);
       await sendBookingEmail(bookingData, email); // to user
+      console.log("✅ User email sent");
       await sendBookingEmail(bookingData, "bookings@gotogotravelsolutions.com", true); // to admin
       
       res.json({ success: true });
     } catch (err) {
       res.status(500).json({ success: false, error: "Email sending failed", message: err.message });
+      console.error("❌ Failed to send user email:", err.message);
     }
   } else {
     res.status(400).json({ success: false, error: "Invalid signature" });

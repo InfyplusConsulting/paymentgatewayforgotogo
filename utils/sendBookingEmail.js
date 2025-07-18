@@ -11,10 +11,15 @@ const transporter = nodemailer.createTransport({
     user: "bookings@gotogotravelsolutions.com",
     pass: process.env.EMAIL_PASS, // make sure this is correct
   },
-  logger: true,
-  debug: true,
 });
 
+// const transporter = nodemailer.createTransport({
+//   service: "gmail",
+//   auth: {
+//     user: "devanshrajput032006@gmail.com",
+//     pass: "pyih qahr vzeq dabh", 
+//   },
+// });
 
 async function sendBookingEmail(bookingData, toEmail, isAdmin = false) {
   const {
