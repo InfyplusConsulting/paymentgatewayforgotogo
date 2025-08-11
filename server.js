@@ -63,6 +63,16 @@ app.post("/verify", async (req, res) => {
     try {
       bookingData.paymentId = razorpay_payment_id;
 
+      console.log("Booking Data:", bookingData);
+
+
+       // ✅ Send booking data to Google Apps Script
+    await fetch("https://script.google.com/macros/s/AKfycbyA7aAJFfGUn3vmBvqD7B_TawhQ3gltmu72CVPp9hxYvhX4N2WXyez5_p6q9zQatDn3nw/exec", {
+      method: "POST",
+      body: JSON.stringify(bookingData),
+      headers: { "Content-Type": "application/json" }
+    });
+
       // ✅ Send email here
       console.log("🚀 Sending user email to:", email);
       await sendBookingEmail(bookingData, email); // to user
