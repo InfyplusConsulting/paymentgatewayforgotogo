@@ -12,12 +12,23 @@ const PORT = process.env.PORT || 3000; // Use port from .env or default to 3000
 // --- 2. NODEMAILER EMAIL TRANSPORTER ---
 // This transporter uses your Gmail account to send emails.
 // Make sure you have a Gmail App Password in your .env file.
+// const transporter = nodemailer.createTransport({
+//     service: "gmail",
+//     auth: {
+//         user: "devanshbusinesswork@gmail.com", // Your sending Gmail address
+//         pass: process.env.GMAIL_APP_PASS,    // Your Gmail App Password
+//     },
+// });
+
+// ✅ Option 1: GoDaddy SMTP (Comment if not used)
 const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-        user: "devanshbusinesswork@gmail.com", // Your sending Gmail address
-        pass: process.env.GMAIL_APP_PASS,    // Your Gmail App Password
-    },
+  host: "sg2plzcpnl506974.prod.sin2.secureserver.net", // from your image
+  port: 465,
+  secure: true, // SSL
+  auth: {
+    user: "bookings@gotogotravelsolutions.com",
+    pass: process.env.EMAIL_PASS, // make sure this is correct
+  },
 });
 
 // --- 3. MIDDLEWARE CONFIGURATION ---
@@ -119,6 +130,9 @@ app.post('/verify-payment', async (req, res) => {
                     <p><strong>Name:</strong> ${billing.firstName} ${billing.lastName}</p>
                     <p><strong>Email:</strong> ${billing.email}</p>
                     <p><strong>Mobile:</strong> ${billing.mobile}</p>
+                    <p><strong>Hotel Name:<strong> ${billing.hotelName}</p>
+                    <p><strong>Hotel Address:<strong> ${billing.Address}</p>
+                    <p><strong>Hotel Additional Info:<strong> ${billing.additionalInfo}</p>
                     <hr>
                     <h2>Payment Information</h2>
                     <p><strong>Razorpay Order ID:</strong> ${razorpay_order_id}</p>
@@ -208,6 +222,9 @@ app.post('/book-cash', async (req, res) => {
                 <p><strong>Name:</strong> ${billing.firstName} ${billing.lastName}</p>
                 <p><strong>Email:</strong> ${billing.email}</p>
                 <p><strong>Mobile:</strong> ${billing.mobile}</p>
+                <p><strong>Hotel Name:<strong> ${billing.hotelName}</p>
+                    <p><strong>Hotel Address:<strong> ${billing.Address}</p>
+                    <p><strong>Hotel Additional Info:<strong> ${billing.additionalInfo}</p>
                 <hr>
                 <h2>Payment Information</h2>
                 <p><strong>Total Price (USD):</strong> $${cart.totalPrice}</p>
