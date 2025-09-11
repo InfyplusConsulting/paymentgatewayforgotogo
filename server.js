@@ -10,7 +10,7 @@ app.use(cors({
   "https://www.gotogo.in",
   "https://gotogo.in",
   "https://gotogoin.netlify.app",
-  "http://127.0.0.1:5502",
+  "http://127.0.0.1:5500",
   "https://testingwebsitessites.netlify.app"
 ],
 
@@ -77,7 +77,7 @@ app.post("/verify", async (req, res) => {
       console.log("🚀 Sending user email to:", email);
       await sendBookingEmail(bookingData, email); // to user
       console.log("✅ User email sent");
-      await sendBookingEmail(bookingData, "bookings@gotogotravelsolutions.com", true); // to admin
+      await sendBookingEmail(bookingData, "devanshbusinesswork@gmail.com", true); // to admin
       
       res.json({ success: true });
     } catch (err) {
