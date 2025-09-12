@@ -35,7 +35,7 @@ const transporter = nodemailer.createTransport({
 
 // CORS (Cross-Origin Resource Sharing) configuration
 const allowedOrigins = [
-    'https://www.your-live-website.com', // Add your actual production domain
+    'https://gotogomerger.netlify.app', // Add your actual production domain
     'http://127.0.0.1:5500',              // For local testing
     'http://localhost:5500'                // For local testing
 ];
@@ -67,6 +67,27 @@ app.get('/ping', (req, res) => {
     console.log('Server was pinged and is now awake.');
     res.json({ success: true, message: 'Server is awake and ready.' });
 });
+
+// Add this function to your server.js
+
+// This function sends booking data to your Google Apps Script.
+async function addBookingToSheet(bookingDetails) {
+  // We use a try/catch block so that if Google Sheets fails,
+  // it doesn't crash our entire server.
+  try {
+    console.log("Sending booking to Google Sheet...");
+    await fetch(process.env.GOOGLE_SCRIPT_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(bookingDetails),
+    });
+    console.log("Successfully sent booking to Google Sheet.");
+  } catch (error) {
+    console.error("Error sending data to Google Sheets:", error);
+  }
+}
 
 // == ROUTE 1: CREATE A RAZORPAY ORDER ==
 app.post('/create-order', async (req, res) => {
@@ -103,6 +124,14 @@ app.post('/verify-payment', async (req, res) => {
     if (generated_signature === razorpay_signature) {
         console.log('Payment verified successfully.');
 
+        // Call the function to add data to the sheet
+    addBookingToSheet({ 
+        ...req.body, 
+        paymentMethod: 'Razorpay', 
+        paymentId: razorpay_payment_id 
+    });
+
+
         // If payment is verified, send confirmation emails
         try {
             const travelerInfoHtml = travelers.map(person =>
@@ -113,25 +142,28 @@ app.post('/verify-payment', async (req, res) => {
             const adminMailOptions = {
                 from: '"GoToGo Bookings" <devanshbusinesswork@gmail.com>',
                 to: 'devanshrajput032006@gmail.com', // Your admin email
-                subject: `[ADMIN] New Booking Confirmed: ${cart.packageName || cart.optionTitle}`,
+                subject: `[ADMIN] New Booking Confirmed: ${cart.packageName || "N/A"}`,
                 html: `
                     <h1>New Booking Received!</h1>
                     <p>A new booking has been successfully paid for and confirmed.</p>
                     <hr>
                     <h2>Booking Details</h2>
-                    <p><strong>Package:</strong> ${cart.packageName || cart.optionTitle}</p>
+                    <p><strong>Package:</strong> ${cart.packageName || "N/A"}</p>
                     <p><strong>Tour Date:</strong> ${billing.tourDate}</p>
                     <p><strong>Total Price (USD):</strong> $${cart.totalPrice}</p>
                     <hr>
                     <h2>Traveler Information</h2>
                     ${travelerInfoHtml}
                     <hr>
+                    <h2>Facilities</h2>
+                    <p><strong>${cart.optionTitle.replace(/^Option\s*\d+\s*:/i, " - ")}</strong></p>
+                    <hr>
                     <h2>Customer Information</h2>
                     <p><strong>Name:</strong> ${billing.firstName} ${billing.lastName}</p>
                     <p><strong>Email:</strong> ${billing.email}</p>
                     <p><strong>Mobile:</strong> ${billing.mobile}</p>
                     <p><strong>Hotel Name:<strong> ${billing.hotelName}</p>
-                    <p><strong>Hotel Address:<strong> ${billing.Address}</p>
+                    <p><strong>Hotel Address:<strong> ${billing.hotelAddress}</p>
                     <p><strong>Hotel Additional Info:<strong> ${billing.additionalInfo}</p>
                     <hr>
                     <h2>Payment Information</h2>
@@ -151,8 +183,11 @@ app.post('/verify-payment', async (req, res) => {
                     <p>Please find your booking summary below.</p>
                     <hr>
                     <h2>Booking Summary</h2>
-                    <p><strong>Package:</strong> ${cart.packageName || cart.optionTitle}</p>
+                    <p><strong>Package:</strong> ${cart.packageName || "N/A"}</p>
                     <p><strong>Tour Date:</strong> ${billing.tourDate}</p>
+                    <hr>
+                    <h2>Facilities</h2>
+                    <p><strong>${cart.optionTitle.replace(/^Option\s*\d+\s*:/i, " - ")}</strong></p>
                     <hr>
                     <h2>Your Traveler Details</h2>
                     ${travelerInfoHtml}
@@ -161,7 +196,8 @@ app.post('/verify-payment', async (req, res) => {
                     <p><strong>Total Paid (USD):</strong> $${cart.totalPrice}</p>
                     <p><strong>Razorpay Payment ID:</strong> ${razorpay_payment_id}</p>
                     <hr>
-                    <p>If you have any questions, feel free to contact us.</p>
+                    <p>If you have any questions, feel free to contact us. bookings@gotogotravelsolution.com</p>
+                    <a href="https://gotogotravelsolutions.com" style="display: inline-block; padding: 10px 20px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px;">Visit Our Website</a> 
                     <p>Sincerely,<br>The GoToGo Team</p>
                 `
             };
@@ -197,6 +233,14 @@ app.post('/book-cash', async (req, res) => {
     // No payment verification is needed for cash bookings.
     // We go straight to sending the confirmation emails.
     try {
+
+         // Call the function to add data to the sheet
+    addBookingToSheet({ 
+        ...req.body, 
+        paymentMethod: 'Cash', 
+        paymentId: 'N/A' 
+    });
+
         const travelerInfoHtml = travelers.map(person =>
             `<p><strong>${person.type}:</strong> ${person.name} (Age: ${person.age})</p>`
         ).join('');
@@ -205,25 +249,28 @@ app.post('/book-cash', async (req, res) => {
         const adminMailOptions = {
             from: '"GoToGo Bookings" <devanshbusinesswork@gmail.com>',
             to: 'devanshrajput032006@gmail.com', // Your admin email
-            subject: `[CASH BOOKING] New Booking Confirmed: ${cart.packageName || cart.optionTitle}`,
+            subject: `[CASH BOOKING] New Booking Confirmed: ${cart.packageName || "N/A"}`,
             html: `
                 <h1>New Booking Received! (Pay by Cash)</h1>
                 <p>A new booking has been made with the <strong>Pay by Cash</strong> option.</p>
                 <hr>
                 <h2>Booking Details</h2>
                 <p><strong>Payment Method:</strong> <span style="font-weight: bold; color: green;">PAY ON ARRIVAL (CASH)</span></p>
-                <p><strong>Package:</strong> ${cart.packageName || cart.optionTitle}</p>
+                <p><strong>Package:</strong> ${cart.packageName || "N/A"}</p>
                 <p><strong>Tour Date:</strong> ${billing.tourDate}</p>
                 <hr>
                 <h2>Traveler Information</h2>
                 ${travelerInfoHtml}
                 <hr>
+                <h2>Facilities</h2>
+                    <p><strong>${cart.optionTitle.replace(/^Option\s*\d+\s*:/i, " - ")}</strong></p>
+                    <hr>
                 <h2>Customer Information</h2>
                 <p><strong>Name:</strong> ${billing.firstName} ${billing.lastName}</p>
                 <p><strong>Email:</strong> ${billing.email}</p>
                 <p><strong>Mobile:</strong> ${billing.mobile}</p>
                 <p><strong>Hotel Name:<strong> ${billing.hotelName}</p>
-                    <p><strong>Hotel Address:<strong> ${billing.Address}</p>
+                    <p><strong>Hotel Address:<strong> ${billing.hotelAddress}</p>
                     <p><strong>Hotel Additional Info:<strong> ${billing.additionalInfo}</p>
                 <hr>
                 <h2>Payment Information</h2>
@@ -244,14 +291,18 @@ app.post('/book-cash', async (req, res) => {
                 <p>This booking is confirmed on a <strong>Pay on Arrival</strong> basis. Please be prepared to pay the total amount in cash at the start of your tour.</p>
                 <p><strong>Total Price (USD):</strong> $${cart.totalPrice}</p>
                 <hr>
+                <h2>Facilities</h2>
+                    <p><strong>${cart.optionTitle.replace(/^Option\s*\d+\s*:/i, " - ")}</strong></p>
+                    <hr>
                 <h2>Booking Summary</h2>
-                <p><strong>Package:</strong> ${cart.packageName || cart.optionTitle}</p>
+                <p><strong>Package:</strong> ${cart.packageName || "N/A"}</p>
                 <p><strong>Tour Date:</strong> ${billing.tourDate}</p>
                 <hr>
                 <h2>Your Traveler Details</h2>
                 ${travelerInfoHtml}
                 <hr>
-                <p>If you have any questions, please contact us.</p>
+                <p>If you have any questions, please contact us. bookings@gotogotravelsolution.com</p>
+                <a href="https://gotogotravelsolutions.com" style="display: inline-block; padding: 10px 20px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px;">Visit Our Website</a>                
                 <p>Sincerely,<br>The GoToGo Team</p>
             `
         };
@@ -270,6 +321,139 @@ app.post('/book-cash', async (req, res) => {
     } catch (error) {
         console.error('Failed to process cash booking or send emails:', error);
         res.status(500).json({ success: false, message: 'Server error during cash booking.' });
+    }
+});
+
+// Replace the existing /submit-form route in your server.js
+
+// == ROUTE 4: HANDLE CONTACT FORM SUBMISSION ==
+// Replace the existing /submit-form route in your server.js
+
+// == ROUTE 4: HANDLE CONTACT FORM SUBMISSION ==
+app.post('/submit-form', async (req, res) => {
+    console.log('Contact form submission received.');
+    // Updated to include "phone" and remove "subject"
+    const { name, email, phone, message } = req.body;
+
+    // Basic validation
+    if (!name || !email || !phone || !message) {
+        return res.status(400).json({ success: false, message: 'All fields are required.' });
+    }
+
+    try {
+        // --- Email 1: Notification to Admin ---
+        const adminNotificationOptions = {
+            from: '"Shuttle to agra Contact Form" <devanshbusinesswork@gmail.com>',
+            to: 'devanshrajput032006@gmail.com', // Your admin email
+            replyTo: email,
+            subject: `New Message from ${name}`, // Simplified subject
+            html: `
+                <h1>New Message from Website Contact Form</h1>
+                <p><strong>Name:</strong> ${name}</p>
+                <p><strong>Email:</strong> ${email}</p>
+                <p><strong>Phone:</strong> ${phone}</p> <hr>
+                <h2>Message:</h2>
+                <p>${message.replace(/\n/g, "<br>")}</p>
+            `
+        };
+
+        // --- Email 2: Auto-Reply to the User ---
+        const autoReplyOptions = {
+            from: '"GoToGo Travel Solutions" <devanshbusinesswork@gmail.com>',
+            to: email,
+            subject: `We've Received Your Message!`,
+            html: `
+                <h1>Thank You for Contacting Us, ${name}!</h1>
+                <p>We have received your message and will get back to you shortly.</p>
+                <hr>
+                <p><strong>Your Message:</strong><br>${message.replace(/\n/g, "<br>")}</p>
+                <hr>
+                <p>If you have any questions, please contact us. bookings@gotogotravelsolution.com</p>
+                <a href="https://gotogotravelsolutions.com" style="display: inline-block; padding: 10px 20px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px;">Visit Our Website</a>                
+                <p>Sincerely,<br>The GoToGo Team</p>
+            `
+        };
+
+        // --- Send both emails ---
+        await Promise.all([
+            transporter.sendMail(adminNotificationOptions),
+            transporter.sendMail(autoReplyOptions)
+        ]);
+
+        console.log('Contact form email and auto-reply sent successfully.');
+        res.json({ success: true, message: 'Form submitted successfully!' });
+
+    } catch (error) {
+        console.error('Failed to send contact form email:', error);
+        res.status(500).json({ success: false, message: 'Server error. Please try again later.' });
+    }
+});
+
+// Add this new route to your server.js file, along with your other app.post() routes
+
+// == ROUTE 5: HANDLE EVENT INQUIRY FORM SUBMISSION ==
+app.post('/submit-event-inquiry', async (req, res) => {
+    console.log('Event inquiry form submission received.');
+    const { name, email, phone, eventLocation, eventDate, details } = req.body;
+
+    // Basic validation
+    if (!name || !email || !phone || !eventLocation || !eventDate) {
+        return res.status(400).json({ success: false, message: 'Please fill out all required fields.' });
+    }
+
+    try {
+        // --- Email 1: Notification to Admin ---
+        const adminNotificationOptions = {
+            from: '"Rooms&venues Form" <devanshbusinesswork@gmail.com>',
+            to: 'devanshrajput032006@gmail.com', // Your admin email
+            replyTo: email,
+            subject: `New Event Inquiry from ${name}`,
+            html: `
+                <h1>New Event Inquiry Received</h1>
+                <p><strong>Name:</strong> ${name}</p>
+                <p><strong>Email:</strong> ${email}</p>
+                <p><strong>Phone:</strong> ${phone}</p>
+                <hr>
+                <h2>Event Details</h2>
+                <p><strong>Event Location:</strong> ${eventLocation}</p>
+                <p><strong>Proposed Event Date:</strong> ${eventDate}</p>
+                <hr>
+                <h2>Additional Details:</h2>
+                <p>${details ? details.replace(/\n/g, "<br>") : 'None provided'}</p>
+            `
+        };
+
+        // --- Email 2: Auto-Reply to the User ---
+        const autoReplyOptions = {
+            from: '"GoToGo Travel Solutions" <devanshbusinesswork@gmail.com>',
+            to: email,
+            subject: `We've Received Your Event Inquiry!`,
+            html: `
+                <h1>Thank You for Your Inquiry, ${name}!</h1>
+                <p>We have successfully received your request for an event. A member of our events team will review your details and get back to you soon.</p>
+                <p>For your records, here is a copy of your submission:</p>
+                <hr>
+                <p><strong>Event Location:</strong> ${eventLocation}</p>
+                <p><strong>Event Date:</strong> ${eventDate}</p>
+                <hr>
+                <p>If you have any questions, please contact us. bookings@gotogotravelsolution.com</p>
+                <a href="https://gotogotravelsolutions.com" style="display: inline-block; padding: 10px 20px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px;">Visit Our Website</a>                
+                <p>Sincerely,<br>The GoToGo Team</p>
+            `
+        };
+
+        // --- Send both emails ---
+        await Promise.all([
+            transporter.sendMail(adminNotificationOptions),
+            transporter.sendMail(autoReplyOptions)
+        ]);
+
+        console.log('Event inquiry email and auto-reply sent successfully.');
+        res.json({ success: true, message: 'Inquiry submitted successfully!' });
+
+    } catch (error) {
+        console.error('Failed to send event inquiry email:', error);
+        res.status(500).json({ success: false, message: 'Server error. Please try again later.' });
     }
 });
 
