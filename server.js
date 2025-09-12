@@ -9,7 +9,7 @@ app.use(cors({
   origin: [
   "https://www.gotogo.in",
   "https://gotogo.in",
-  "https://gotogoin.netlify.app",
+  "https://gotogomerger.netlify.app",
   "http://127.0.0.1:5500",
   "https://testingwebsitessites.netlify.app"
 ],
