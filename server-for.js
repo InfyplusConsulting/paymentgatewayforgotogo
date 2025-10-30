@@ -141,7 +141,7 @@ app.post('/verify-payment', async (req, res) => {
             // Email 1: To the Admin
             const adminMailOptions = {
                 from: '"GoToGo Bookings" <devanshbusinesswork@gmail.com>',
-                to: 'devanshrajput032006@gmail.com', // Your admin email
+                to: 'devanshbusinesswork@gmail.com', // Your admin email
                 subject: `[ADMIN] New Booking Confirmed: ${cart.packageName || "N/A"}`,
                 html: `
                     <h1>New Booking Received!</h1>
@@ -248,7 +248,7 @@ app.post('/book-cash', async (req, res) => {
         // Email 1: To the Admin
         const adminMailOptions = {
             from: '"GoToGo Bookings" <devanshbusinesswork@gmail.com>',
-            to: 'devanshrajput032006@gmail.com', // Your admin email
+            to: 'devanshbusinesswork@gmail.com', // Your admin email
             subject: `[CASH BOOKING] New Booking Confirmed: ${cart.packageName || "N/A"}`,
             html: `
                 <h1>New Booking Received! (Pay by Cash)</h1>
@@ -344,7 +344,7 @@ app.post('/submit-form', async (req, res) => {
         // --- Email 1: Notification to Admin ---
         const adminNotificationOptions = {
             from: '"Shuttle to agra Contact Form" <devanshbusinesswork@gmail.com>',
-            to: 'devanshrajput032006@gmail.com', // Your admin email
+            to: 'devanshbusinesswork@gmail.com', // Your admin email
             replyTo: email,
             subject: `New Message from ${name}`, // Simplified subject
             html: `
@@ -405,7 +405,7 @@ app.post('/submit-event-inquiry', async (req, res) => {
         // --- Email 1: Notification to Admin ---
         const adminNotificationOptions = {
             from: '"Rooms&venues Form" <devanshbusinesswork@gmail.com>',
-            to: 'devanshrajput032006@gmail.com', // Your admin email
+            to: 'devanshbusinesswork@gmail.com', // Your admin email
             replyTo: email,
             subject: `New Event Inquiry from ${name}`,
             html: `
