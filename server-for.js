@@ -21,11 +21,16 @@ const PORT = process.env.PORT || 3000; // Use port from .env or default to 3000
 // });
 
 const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-        user: "devanshbusinesswork@gmail.com", // Your sending Gmail address
-        pass: process.env.GMAIL_APP_PASS,    // Your Gmail App Password
-    },
+  host: 'smtp.gmail.com', // Explicit Host
+  port: 587,              // Standard TLS Port
+  secure: false,          // Use STARTTLS
+  auth: {
+    user: "devanshbusinesswork@gmail.com",
+    pass: process.env.GMAIL_APP_PASS,
+  },
+  tls: {
+      rejectUnauthorized: false // Optional: Helps with some environment certificate issues
+  }
 });
 
 
@@ -214,12 +219,12 @@ app.post('/verify-payment', async (req, res) => {
             };
             
             // Send both emails at the same time
-            // await Promise.all([
-            //     transporter.sendMail(adminMailOptions),
-            //     transporter.sendMail(customerMailOptions)
-            // ]);
-            await transporter.sendMail(adminMailOptions);
-            await transporter.sendMail(customerMailOptions);
+            await Promise.all([
+                transporter.sendMail(adminMailOptions),
+                transporter.sendMail(customerMailOptions)
+            ]);
+            // await transporter.sendMail(adminMailOptions);
+            // await transporter.sendMail(customerMailOptions);
 
             console.log('Admin and customer confirmation emails sent successfully.');
 
