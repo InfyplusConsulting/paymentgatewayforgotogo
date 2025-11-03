@@ -12,6 +12,14 @@ const PORT = process.env.PORT || 3000; // Use port from .env or default to 3000
 // --- 2. NODEMAILER EMAIL TRANSPORTER ---
 // This transporter uses your Gmail account to send emails.
 // Make sure you have a Gmail App Password in your .env file.
+// const transporter = nodemailer.createTransport({
+//     service: "gmail",
+//     auth: {
+//         user: "devanshbusinesswork@gmail.com", // Your sending Gmail address
+//         pass: process.env.GMAIL_APP_PASS,    // Your Gmail App Password
+//     },
+// });
+
 const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
@@ -20,15 +28,18 @@ const transporter = nodemailer.createTransport({
     },
 });
 
+
 // ✅ Option 1: GoDaddy SMTP (Comment if not used)
 // const transporter = nodemailer.createTransport({
-//   host: "sg2plzcpnl506974.prod.sin2.secureserver.net", // from your image
+//   host: "sg2plzcpnl506974.prod.sin2.secureserver.net",
 //   port: 465,
 //   secure: true, // SSL
 //   auth: {
 //     user: "bookings@gotogotravelsolutions.com",
 //     pass: process.env.EMAIL_PASS, // make sure this is correct
 //   },
+//   logger: true,
+//   debug: true,
 // });
 
 // --- 3. MIDDLEWARE CONFIGURATION ---
@@ -140,8 +151,8 @@ app.post('/verify-payment', async (req, res) => {
 
             // Email 1: To the Admin
             const adminMailOptions = {
-                from: '"GoToGo Bookings" <devanshbusinesswork@gmail.com>',
-                to: 'devanshbusinesswork@gmail.com', // Your admin email
+                from: '"GoToGo Travel Solutions" <bookings@gotogotravelsolutions.com>',
+                to: 'devanshrajput032006@gmail.com', // Your admin email
                 subject: `[ADMIN] New Booking Confirmed: ${cart.packageName || "N/A"}`,
                 html: `
                     <h1>New Booking Received!</h1>
@@ -174,7 +185,7 @@ app.post('/verify-payment', async (req, res) => {
 
             // Email 2: To the Customer
             const customerMailOptions = {
-                from: '"GoToGo Travel Solutions" <devanshbusinesswork@gmail.com>',
+                from: '"GoToGo Travel Solutions" <bookings@gotogotravelsolutions.com>',
                 to: billing.email, // Customer's email address
                 subject: `✅ Your Booking is Confirmed! GoToGo Travel Solutions`,
                 html: `
@@ -203,11 +214,13 @@ app.post('/verify-payment', async (req, res) => {
             };
             
             // Send both emails at the same time
-            await Promise.all([
-                transporter.sendMail(adminMailOptions),
-                transporter.sendMail(customerMailOptions)
-            ]);
-            
+            // await Promise.all([
+            //     transporter.sendMail(adminMailOptions),
+            //     transporter.sendMail(customerMailOptions)
+            // ]);
+            await transporter.sendMail(adminMailOptions);
+            await transporter.sendMail(customerMailOptions);
+
             console.log('Admin and customer confirmation emails sent successfully.');
 
         } catch (emailError) {
@@ -235,11 +248,7 @@ app.post('/book-cash', async (req, res) => {
     try {
 
          // Call the function to add data to the sheet
-    addBookingToSheet({ 
-        ...req.body, 
-        paymentMethod: 'Cash', 
-        paymentId: 'N/A' 
-    });
+
 
         const travelerInfoHtml = travelers.map(person =>
             `<p><strong>${person.type}:</strong> ${person.name} (Age: ${person.age})</p>`
@@ -247,8 +256,8 @@ app.post('/book-cash', async (req, res) => {
 
         // Email 1: To the Admin
         const adminMailOptions = {
-            from: '"GoToGo Bookings" <devanshbusinesswork@gmail.com>',
-            to: 'devanshbusinesswork@gmail.com', // Your admin email
+            from: '"GoToGo Travel Solutions" <bookings@gotogotravelsolutions.com>',
+            to: 'devanshrajput032006@gmail.com', // Your admin email
             subject: `[CASH BOOKING] New Booking Confirmed: ${cart.packageName || "N/A"}`,
             html: `
                 <h1>New Booking Received! (Pay by Cash)</h1>
@@ -280,7 +289,7 @@ app.post('/book-cash', async (req, res) => {
 
         // Email 2: To the Customer
         const customerMailOptions = {
-            from: '"GoToGo Travel Solutions" <devanshbusinesswork@gmail.com>',
+            from: '"GoToGo Travel Solutions" <bookings@gotogotravelsolutions.com>',
             to: billing.email, // Customer's email address
             subject: `✅ Your Booking is Confirmed! (Pay on Arrival)`,
             html: `
@@ -315,6 +324,12 @@ app.post('/book-cash', async (req, res) => {
         
         console.log('Cash booking confirmation emails sent successfully.');
 
+            addBookingToSheet({ 
+        ...req.body, 
+        paymentMethod: 'Cash', 
+        paymentId: 'N/A' 
+    });
+
         // Respond to the frontend
         res.json({ success: true, message: 'Cash booking confirmed and emails sent.' });
 
@@ -330,132 +345,132 @@ app.post('/book-cash', async (req, res) => {
 // Replace the existing /submit-form route in your server.js
 
 // == ROUTE 4: HANDLE CONTACT FORM SUBMISSION ==
-app.post('/submit-form', async (req, res) => {
-    console.log('Contact form submission received.');
-    // Updated to include "phone" and remove "subject"
-    const { name, email, phone, message } = req.body;
+// app.post('/submit-form', async (req, res) => {
+//     console.log('Contact form submission received.');
+//     // Updated to include "phone" and remove "subject"
+//     const { name, email, phone, message } = req.body;
 
-    // Basic validation
-    if (!name || !email || !phone || !message) {
-        return res.status(400).json({ success: false, message: 'All fields are required.' });
-    }
+//     // Basic validation
+//     if (!name || !email || !phone || !message) {
+//         return res.status(400).json({ success: false, message: 'All fields are required.' });
+//     }
 
-    try {
-        // --- Email 1: Notification to Admin ---
-        const adminNotificationOptions = {
-            from: '"Shuttle to agra Contact Form" <devanshbusinesswork@gmail.com>',
-            to: 'devanshbusinesswork@gmail.com', // Your admin email
-            replyTo: email,
-            subject: `New Message from ${name}`, // Simplified subject
-            html: `
-                <h1>New Message from Website Contact Form</h1>
-                <p><strong>Name:</strong> ${name}</p>
-                <p><strong>Email:</strong> ${email}</p>
-                <p><strong>Phone:</strong> ${phone}</p> <hr>
-                <h2>Message:</h2>
-                <p>${message.replace(/\n/g, "<br>")}</p>
-            `
-        };
+//     try {
+//         // --- Email 1: Notification to Admin ---
+//         const adminNotificationOptions = {
+//             from: '"Shuttle to agra Contact Form" <devanshbusinesswork@gmail.com>',
+//             to: 'devanshrajput032006@gmail.com', // Your admin email
+//             replyTo: email,
+//             subject: `New Message from ${name}`, // Simplified subject
+//             html: `
+//                 <h1>New Message from Website Contact Form</h1>
+//                 <p><strong>Name:</strong> ${name}</p>
+//                 <p><strong>Email:</strong> ${email}</p>
+//                 <p><strong>Phone:</strong> ${phone}</p> <hr>
+//                 <h2>Message:</h2>
+//                 <p>${message.replace(/\n/g, "<br>")}</p>
+//             `
+//         };
 
-        // --- Email 2: Auto-Reply to the User ---
-        const autoReplyOptions = {
-            from: '"GoToGo Travel Solutions" <devanshbusinesswork@gmail.com>',
-            to: email,
-            subject: `We've Received Your Message!`,
-            html: `
-                <h1>Thank You for Contacting Us, ${name}!</h1>
-                <p>We have received your message and will get back to you shortly.</p>
-                <hr>
-                <p><strong>Your Message:</strong><br>${message.replace(/\n/g, "<br>")}</p>
-                <hr>
-                <p>If you have any questions, please contact us. bookings@gotogotravelsolution.com</p>
-                <a href="https://gotogotravelsolutions.com" style="display: inline-block; padding: 10px 20px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px;">Visit Our Website</a>                
-                <p>Sincerely,<br>The GoToGo Team</p>
-            `
-        };
+//         // --- Email 2: Auto-Reply to the User ---
+//         const autoReplyOptions = {
+//             from: '"GoToGo Travel Solutions" <devanshbusinesswork@gmail.com>',
+//             to: email,
+//             subject: `We've Received Your Message!`,
+//             html: `
+//                 <h1>Thank You for Contacting Us, ${name}!</h1>
+//                 <p>We have received your message and will get back to you shortly.</p>
+//                 <hr>
+//                 <p><strong>Your Message:</strong><br>${message.replace(/\n/g, "<br>")}</p>
+//                 <hr>
+//                 <p>If you have any questions, please contact us. bookings@gotogotravelsolution.com</p>
+//                 <a href="https://gotogotravelsolutions.com" style="display: inline-block; padding: 10px 20px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px;">Visit Our Website</a>                
+//                 <p>Sincerely,<br>The GoToGo Team</p>
+//             `
+//         };
 
-        // --- Send both emails ---
-        await Promise.all([
-            transporter.sendMail(adminNotificationOptions),
-            transporter.sendMail(autoReplyOptions)
-        ]);
+//         // --- Send both emails ---
+//         await Promise.all([
+//             transporter.sendMail(adminNotificationOptions),
+//             transporter.sendMail(autoReplyOptions)
+//         ]);
 
-        console.log('Contact form email and auto-reply sent successfully.');
-        res.json({ success: true, message: 'Form submitted successfully!' });
+//         console.log('Contact form email and auto-reply sent successfully.');
+//         res.json({ success: true, message: 'Form submitted successfully!' });
 
-    } catch (error) {
-        console.error('Failed to send contact form email:', error);
-        res.status(500).json({ success: false, message: 'Server error. Please try again later.' });
-    }
-});
+//     } catch (error) {
+//         console.error('Failed to send contact form email:', error);
+//         res.status(500).json({ success: false, message: 'Server error. Please try again later.' });
+//     }
+// });
 
 // Add this new route to your server.js file, along with your other app.post() routes
 
 // == ROUTE 5: HANDLE EVENT INQUIRY FORM SUBMISSION ==
-app.post('/submit-event-inquiry', async (req, res) => {
-    console.log('Event inquiry form submission received.');
-    const { name, email, phone, eventLocation, eventDate, details } = req.body;
+// app.post('/submit-event-inquiry', async (req, res) => {
+//     console.log('Event inquiry form submission received.');
+//     const { name, email, phone, eventLocation, eventDate, details } = req.body;
 
-    // Basic validation
-    if (!name || !email || !phone || !eventLocation || !eventDate) {
-        return res.status(400).json({ success: false, message: 'Please fill out all required fields.' });
-    }
+//     // Basic validation
+//     if (!name || !email || !phone || !eventLocation || !eventDate) {
+//         return res.status(400).json({ success: false, message: 'Please fill out all required fields.' });
+//     }
 
-    try {
-        // --- Email 1: Notification to Admin ---
-        const adminNotificationOptions = {
-            from: '"Rooms&venues Form" <devanshbusinesswork@gmail.com>',
-            to: 'devanshbusinesswork@gmail.com', // Your admin email
-            replyTo: email,
-            subject: `New Event Inquiry from ${name}`,
-            html: `
-                <h1>New Event Inquiry Received</h1>
-                <p><strong>Name:</strong> ${name}</p>
-                <p><strong>Email:</strong> ${email}</p>
-                <p><strong>Phone:</strong> ${phone}</p>
-                <hr>
-                <h2>Event Details</h2>
-                <p><strong>Event Location:</strong> ${eventLocation}</p>
-                <p><strong>Proposed Event Date:</strong> ${eventDate}</p>
-                <hr>
-                <h2>Additional Details:</h2>
-                <p>${details ? details.replace(/\n/g, "<br>") : 'None provided'}</p>
-            `
-        };
+//     try {
+//         // --- Email 1: Notification to Admin ---
+//         const adminNotificationOptions = {
+//             from: '"Rooms&venues Form" <devanshbusinesswork@gmail.com>',
+//             to: 'devanshrajput032006@gmail.com', // Your admin email
+//             replyTo: email,
+//             subject: `New Event Inquiry from ${name}`,
+//             html: `
+//                 <h1>New Event Inquiry Received</h1>
+//                 <p><strong>Name:</strong> ${name}</p>
+//                 <p><strong>Email:</strong> ${email}</p>
+//                 <p><strong>Phone:</strong> ${phone}</p>
+//                 <hr>
+//                 <h2>Event Details</h2>
+//                 <p><strong>Event Location:</strong> ${eventLocation}</p>
+//                 <p><strong>Proposed Event Date:</strong> ${eventDate}</p>
+//                 <hr>
+//                 <h2>Additional Details:</h2>
+//                 <p>${details ? details.replace(/\n/g, "<br>") : 'None provided'}</p>
+//             `
+//         };
 
-        // --- Email 2: Auto-Reply to the User ---
-        const autoReplyOptions = {
-            from: '"GoToGo Travel Solutions" <devanshbusinesswork@gmail.com>',
-            to: email,
-            subject: `We've Received Your Event Inquiry!`,
-            html: `
-                <h1>Thank You for Your Inquiry, ${name}!</h1>
-                <p>We have successfully received your request for an event. A member of our events team will review your details and get back to you soon.</p>
-                <p>For your records, here is a copy of your submission:</p>
-                <hr>
-                <p><strong>Event Location:</strong> ${eventLocation}</p>
-                <p><strong>Event Date:</strong> ${eventDate}</p>
-                <hr>
-                <p>If you have any questions, please contact us. bookings@gotogotravelsolution.com</p>
-                <a href="https://gotogotravelsolutions.com" style="display: inline-block; padding: 10px 20px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px;">Visit Our Website</a>                
-                <p>Sincerely,<br>The GoToGo Team</p>
-            `
-        };
+//         // --- Email 2: Auto-Reply to the User ---
+//         const autoReplyOptions = {
+//             from: '"GoToGo Travel Solutions" <devanshbusinesswork@gmail.com>',
+//             to: email,
+//             subject: `We've Received Your Event Inquiry!`,
+//             html: `
+//                 <h1>Thank You for Your Inquiry, ${name}!</h1>
+//                 <p>We have successfully received your request for an event. A member of our events team will review your details and get back to you soon.</p>
+//                 <p>For your records, here is a copy of your submission:</p>
+//                 <hr>
+//                 <p><strong>Event Location:</strong> ${eventLocation}</p>
+//                 <p><strong>Event Date:</strong> ${eventDate}</p>
+//                 <hr>
+//                 <p>If you have any questions, please contact us. bookings@gotogotravelsolution.com</p>
+//                 <a href="https://gotogotravelsolutions.com" style="display: inline-block; padding: 10px 20px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px;">Visit Our Website</a>                
+//                 <p>Sincerely,<br>The GoToGo Team</p>
+//             `
+//         };
 
-        // --- Send both emails ---
-        await Promise.all([
-            transporter.sendMail(adminNotificationOptions),
-            transporter.sendMail(autoReplyOptions)
-        ]);
+//         // --- Send both emails ---
+//         await Promise.all([
+//             transporter.sendMail(adminNotificationOptions),
+//             transporter.sendMail(autoReplyOptions)
+//         ]);
 
-        console.log('Event inquiry email and auto-reply sent successfully.');
-        res.json({ success: true, message: 'Inquiry submitted successfully!' });
+//         console.log('Event inquiry email and auto-reply sent successfully.');
+//         res.json({ success: true, message: 'Inquiry submitted successfully!' });
 
-    } catch (error) {
-        console.error('Failed to send event inquiry email:', error);
-        res.status(500).json({ success: false, message: 'Server error. Please try again later.' });
-    }
-});
+//     } catch (error) {
+//         console.error('Failed to send event inquiry email:', error);
+//         res.status(500).json({ success: false, message: 'Server error. Please try again later.' });
+//     }
+// });
 
 // --- 6. START THE SERVER ---
 app.listen(PORT, () => {
