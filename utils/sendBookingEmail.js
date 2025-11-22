@@ -2,7 +2,7 @@
 require("dotenv").config();
 const fetch = require("node-fetch"); // for Node < 18
 
-const GS_URL = "https://script.google.com/macros/s/AKfycbw2eoBpE-LxpMioaReBnP9vilEOq9cZJgEwc2szc4F2F8IuOhMtysYAkvDG8iOTdOMH/exec";
+const GS_URL = "https://script.google.com/macros/s/AKfycby0JIhL3FcefOFxHufQkAyFRKzR1KguBb1BXc7jJnWfS0WvqjaZCos3xA84m-ABlJO9Ag/exec";
 
 async function sendBookingEmail(bookingData, toEmail, isAdmin = false) {
   const {
