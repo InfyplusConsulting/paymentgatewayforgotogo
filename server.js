@@ -77,7 +77,7 @@ app.post("/verify", async (req, res) => {
       console.log("🚀 Sending user email to:", email);
       await sendBookingEmail(bookingData, email); // to user
       console.log("✅ User email sent");
-      await sendBookingEmail(bookingData, "devanshbusinesswork@gmail.com", true); // to admin
+      await sendBookingEmail(bookingData, "care@gotogotravelsolutions.com", true); // to admin
       
       res.json({ success: true });
     } catch (err) {
