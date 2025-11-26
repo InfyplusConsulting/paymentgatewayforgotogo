@@ -11,7 +11,9 @@ app.use(cors({
   "https://gotogo.in",
   "https://gotogomerger.netlify.app",
   "http://127.0.0.1:5502",
-  "https://testingwebsitessites.netlify.app"
+  "http://127.0.0.1:5500",
+  "https://www.gotogotravelsolutions.com",
+  "https://gotogotravelsolutions.com"
 ],
 
   credentials: true
