@@ -10,8 +10,8 @@ app.use(cors({
   "https://www.gotogo.in",
   "https://gotogo.in",
   "https://gotogomerger.netlify.app",
-  "http://127.0.0.1:5502",
-  "http://127.0.0.1:5500",
+  // "http://127.0.0.1:5502",
+  // "http://127.0.0.1:5500",
   "https://www.gotogotravelsolutions.com",
   "https://gotogotravelsolutions.com"
 ],
