@@ -54,10 +54,36 @@ async function sendBookingEmail(bookingData, toEmail, isAdmin = false) {
       <p style="margin: 0; font-size: 15px;">We look forward to serving you with a smooth and comfortable ride. Thank you for choosing <strong>GoToGo Airport Shuttle</strong>.</p>
     </div>
 
-    <p style="font-size: 13px; color: #999; text-align: center; margin-top: 40px;">
-      This is an automated message. For assistance, contact us at <a href="mailto:care@gotogotravelsolutions.com" style="color: #0c52a2;">care@gotogotravelsolutions.com</a>.<br />
-      Visit <a href="https://gotogo.in" style="color: #0c52a2; text-decoration: none;">gotogo.in</a> for more.
+      <!-- Buttons Section -->
+  <div style="margin-top: 20px; display: flex; gap: 12px; flex-wrap: wrap;">
+    
+    <!-- Send Feedback -->
+    <a 
+      href="mailto:care@gotogotravelsolutions.com"
+      style="background:#f4be30; color:black; padding:10px 16px; margin-right:15px; border-radius:6px; text-decoration:none; font-weight:600; display:inline-block;"
+    >Send Feedback</a>
+
+    <!-- Write a Review -->
+    <a
+      href="https://g.co/kgs/2Chx8BF"
+      style="background:#f4be30; color:black; padding:10px 16px; border-radius:6px; text-decoration:none; font-weight:600; display:inline-block;"
+      target="_blank"
+    >Write a Review</a>
+
+  </div>
+
+  <!-- Missed Download Note -->
+  <div style="margin-top: 24px; font-size: 14px; color:#000;">
+    <p style="margin:0 0 5px 0;"><b>Note:</b> If you missed downloading your ticket, use this link:</p>
+    <a href="https://www.gotogo.in/your-ticket" style="color:#0c52a2; font-weight:500;" target="_blank">
+      gotogo.in/your-ticket
+    </a>
+    <p style="margin-top:5px;">
+      <b>Pls open the link on the same device you used to book the ticket,</b><br>
+      otherwise you will not be able to see the ticket details.
     </p>
+  </div>
+
   </div>
   `;
 

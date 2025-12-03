@@ -10,8 +10,8 @@ app.use(cors({
   "https://www.gotogo.in",
   "https://gotogo.in",
   "https://gotogomerger.netlify.app",
-  // "http://127.0.0.1:5502",
-  // "http://127.0.0.1:5500",
+  "http://127.0.0.1:5502",
+  "http://127.0.0.1:5500",
   "https://www.gotogotravelsolutions.com",
   "https://gotogotravelsolutions.com"
 ],
@@ -69,7 +69,7 @@ app.post("/verify", async (req, res) => {
 
 
        // ✅ Send booking data to Google Apps Script
-    await fetch("https://script.google.com/macros/s/AKfycby0JIhL3FcefOFxHufQkAyFRKzR1KguBb1BXc7jJnWfS0WvqjaZCos3xA84m-ABlJO9Ag/exec", {
+    await fetch("https://script.google.com/macros/s/AKfycbyA7aAJFfGUn3vmBvqD7B_TawhQ3gltmu72CVPp9hxYvhX4N2WXyez5_p6q9zQatDn3nw/exec", {
       method: "POST",
       body: JSON.stringify(bookingData),
       headers: { "Content-Type": "application/json" }
