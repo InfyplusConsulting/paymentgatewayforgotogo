@@ -39,8 +39,10 @@ app.post("/api/create-order", async (req, res) => {
   if (!amount) return res.status(400).json({ error: "Amount is required" });
 
   try {
+    // FIX: Use Math.round to ensure it is always an integer (no decimals)
+    const amountInPaise = Math.round(Number(amount) * 100);
     const options = {
-      amount: amount * 100, // cents
+      amount: amountInPaise, // cents
       currency: "INR",
       receipt: `receipt_${Date.now()}`,
     };
