@@ -8,6 +8,13 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// INCREASE PAYLOAD SIZE LIMIT (Important for uploading files/images)
+// const app = express();
+
+// Change 50mb to 200mb
+app.use(express.json({ limit: '200mb' }));
+app.use(express.urlencoded({ limit: '200mb', extended: true }));
+
 const allowedOrigins = [
   'https://gotogo-merger.netlify.app',
   'http://127.0.0.1:5500',
@@ -27,47 +34,121 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.use(express.json());
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
+// --- HELPER: UPLOAD TO GITHUB ---
+async function uploadToGitHub(base64Content, fileName) {
+    try {
+        const url = `https://api.github.com/repos/${process.env.GITHUB_USERNAME}/${process.env.GITHUB_REPO}/contents/passports/${fileName}`;
+        
+        const response = await fetch(url, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${process.env.GITHUB_TOKEN}`,
+                'Content-Type': 'application/json',
+                'User-Agent': 'GoToGo-Backend'
+            },
+            body: JSON.stringify({
+                message: `Upload passport ${fileName}`,
+                content: base64Content,
+                encoding: 'base64'
+            })
+        });
+
+        if (!response.ok) {
+            const errText = await response.text();
+            console.error("GitHub Error:", errText);
+            return "Upload Failed"; // Fallback text
+        }
+
+        const data = await response.json();
+        return data.content.html_url; // This is the link we save to Sheet
+    } catch (error) {
+        console.error("GitHub Upload Exception:", error);
+        return "Upload Error";
+    }
+}
+
+// // --- HELPER: PROCESS TRAVELER FILES ---
+// async function processTravelerFiles(travelers) {
+//     // Loop through travelers and check if they have a file to upload
+//     const updatedTravelers = await Promise.all(travelers.map(async (t) => {
+//         if (t.passportFileBase64) {
+//             const timestamp = Date.now();
+//             // Clean filename
+//             const cleanName = (t.name || 'traveler').replace(/[^a-zA-Z0-9]/g, "_");
+//             const fileName = `${timestamp}_${cleanName}.${t.fileExtension || 'png'}`;
+            
+//             // Upload to GitHub
+//             const fileUrl = await uploadToGitHub(t.passportFileBase64, fileName);
+            
+//             // Return updated traveler object (Remove huge base64 string, add clean URL)
+//             return {
+//                 ...t,
+//                 documentUrl: fileUrl,
+//                 passportFileBase64: undefined, // Remove heavy data
+//                 fileExtension: undefined
+//             };
+//         }
+//         return t; // Return as is if no file
+//     }));
+    
+//     return updatedTravelers;
+// }
+// --- HELPER: DELAY FUNCTION (To prevent GitHub blocking) ---
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// --- HELPER: PROCESS TRAVELER FILES (UPDATED: SEQUENTIAL & UNIQUE) ---
+async function processTravelerFiles(travelers) {
+    const updatedTravelers = [];
+
+    // Loop through each traveler ONE BY ONE (Not parallel)
+    for (let i = 0; i < travelers.length; i++) {
+        const t = travelers[i];
+
+        if (t.passportFileBase64) {
+            const timestamp = Date.now();
+            // Clean Name
+            const cleanName = (t.name || 'traveler').replace(/[^a-zA-Z0-9]/g, "_");
+            
+            // ⚠️ FIX 1: Add Index 'i' to guarantee unique name
+            // Format: Timestamp_Index_Name.png
+            const fileName = `${timestamp}_${i}_${cleanName}.${t.fileExtension || 'png'}`;
+            
+            console.log(`Uploading file ${i+1}/${travelers.length}: ${fileName}`);
+
+            // Upload to GitHub
+            const fileUrl = await uploadToGitHub(t.passportFileBase64, fileName);
+            
+            updatedTravelers.push({
+                ...t,
+                documentUrl: fileUrl,
+                passportFileBase64: t.passportFileBase64, 
+                fileExtension: t.fileExtension
+            });
+
+            // ⚠️ FIX 2: Wait 1 second before next upload to avoid Rate Limiting
+            await delay(1000); 
+
+        } else {
+            // No file, push as is
+            updatedTravelers.push(t);
+        }
+    }
+    
+    return updatedTravelers;
+}
+
 app.get('/ping', (req, res) => {
   console.log('Server was pinged and is now awake.');
   res.json({ success: true, message: 'Server is awake and ready.' });
 });
 
-// Google Apps Script ko data bhejne wala function
-// async function addBookingToSheet(bookingDetails) {
-//   try {
-//     console.log("Sending booking to Google Sheet + Email Script...");
-
-//     const response = await fetch(process.env.GOOGLE_SCRIPT_URL, {
-//       method: "POST",
-//       headers: {
-//         "Content-Type": "application/json",
-//       },
-//       body: JSON.stringify(bookingDetails),
-//     });
-
-//     const text = await response.text();
-//     console.log("Apps Script response status:", response.status);
-//     console.log("Apps Script response body:", text);
-
-//     if (!response.ok) {
-//       console.error("Apps Script returned error:", response.status, text);
-//     } else {
-//       console.log("Successfully sent booking to Google Script.");
-//     }
-//   } catch (error) {
-//     console.error("Error sending data to Google Sheets/Script:", error);
-//   }
-// }
-
-// Google Apps Script ko data bhejne wala function
-// Google Apps Script ko data bhejne wala function
+// --- GOOGLE APPS SCRIPT FUNCTION ---
 async function addBookingToSheet(bookingDetails) {
   const payload = {
       ...bookingDetails,
@@ -76,42 +157,32 @@ async function addBookingToSheet(bookingDetails) {
   
   const response = await fetch(process.env.GOOGLE_SCRIPT_URL, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
 
   const text = await response.text();
   console.log("Apps Script response body:", text);
 
-  // 1. Apps Script से मिला JSON रिस्पॉन्स पार्स करें
   let result;
   try {
       result = JSON.parse(text);
   } catch (e) {
       console.error("Failed to parse Apps Script response:", text);
-      // यदि रिस्पॉन्स JSON नहीं है, तो एक सामान्य त्रुटि थ्रो करें
       throw new Error("Internal Server Error: Script response malformed.");
   }
 
-  // 2. Apps Script के 'success' फ्लैग की जाँच करें
   if (result.success === false) {
       console.error("Apps Script reported failure:", result.error);
-      // Apps Script में विफल होने पर एक विशिष्ट त्रुटि थ्रो करें
       throw new Error(`Booking processing failed: ${result.error}`);
   }
-
-  // यदि success: true है, तो कोई एरर थ्रो नहीं होगा, और फ़ंक्शन सफलतापूर्वक रिटर्न होगा
   console.log("Successfully sent and processed booking via Google Script.");
 }
 
 // == ROUTE 1: CREATE ORDER ==
 app.post('/create-order', async (req, res) => {
   const { amount, currency, receipt } = req.body;
-
   const options = { amount, currency, receipt };
-
   try {
     const order = await razorpay.orders.create(options);
     res.json(order);
@@ -121,51 +192,61 @@ app.post('/create-order', async (req, res) => {
   }
 });
 
-// == ROUTE 2: VERIFY PAYMENT ==
+// == ROUTE 2: VERIFY PAYMENT (UPDATED FOR FILES) ==
 app.post('/verify-payment', async (req, res) => {
-  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, travelers } = req.body;
 
   const key_secret = process.env.RAZORPAY_KEY_SECRET;
-
   const hmac = crypto.createHmac('sha256', key_secret);
   hmac.update(razorpay_order_id + '|' + razorpay_payment_id);
   const generated_signature = hmac.digest('hex');
 
   if (generated_signature === razorpay_signature) {
-    console.log('Payment verified successfully.');
+    console.log('Payment verified. Processing files...');
 
+    // 1. Process Files (Upload to GitHub)
+    const travelersWithUrls = await processTravelerFiles(travelers || []);
+
+    // 2. Send to Google Sheet (With URLs)
     await addBookingToSheet({
       ...req.body,
+      travelers: travelersWithUrls, // Use the updated list
       paymentMethod: 'Razorpay',
       paymentId: razorpay_payment_id,
     });
 
-    res.json({ success: true, message: 'Payment verified & booking processed.' });
+    // 3. Respond to Frontend
+    res.json({ 
+        success: true, 
+        message: 'Payment verified & booking processed.',
+        // Return travelers with URLs so frontend can use them if needed
+        travelers: travelersWithUrls 
+    });
   } else {
     console.log('Payment verification failed.');
     res.status(400).json({ success: false, message: 'Payment verification failed' });
   }
 });
 
-// == ROUTE 3: CASH BOOKING ==
-// == ROUTE 3: CASH BOOKING ==
+// == ROUTE 3: CASH BOOKING (UPDATED FOR FILES) ==
 app.post('/book-cash', async (req, res) => {
-  console.log('Cash booking request received.');
+  console.log('Cash booking received. Processing files...');
 
   try {
-    // अगर addBookingToSheet में कोई error थ्रो होता है, तो यह catch ब्लॉक में चला जाएगा
+    // 1. Process Files (Upload to GitHub)
+    const travelersWithUrls = await processTravelerFiles(req.body.travelers || []);
+
+    // 2. Send to Google Sheet (With URLs)
     await addBookingToSheet({
       ...req.body,
+      travelers: travelersWithUrls, // Use the updated list
       paymentMethod: 'Cash',
       paymentId: 'N/A',
     });
 
-    // यह लाइन तभी चलेगी जब addBookingToSheet सफल होगा (ईमेल भेजने सहित)
     res.json({ success: true, message: 'Cash booking processed successfully.' });
   } catch (error) {
     console.error('Failed to process cash booking:', error.message);
-    
-    // क्लाइंट को error message भेजें
     res.status(500).json({ 
         success: false, 
         message: 'Server error during cash booking processing. Pls Contact support.' 
@@ -173,6 +254,12 @@ app.post('/book-cash', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+// 👇👇👇 CHANGE THIS PART 👇👇👇
+
+// Assign the result to a variable named 'server'
+const server = app.listen(PORT, () => {
   console.log(`Server is running successfully on http://localhost:${PORT}`);
 });
+
+// Now 'server' exists, so this line will work
+server.setTimeout(300000); // 5 Minutes Timeout
