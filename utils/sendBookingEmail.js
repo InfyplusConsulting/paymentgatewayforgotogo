@@ -33,7 +33,7 @@ async function sendBookingEmail(bookingData, toEmail, isAdmin = false) {
         apiKey: process.env.GS_API_KEY,
         to: toEmail,
         subject: emailSubject,
-        // htmlBody ko ab hum nahi bhej rahe hain taaki Apps Script wala UI chale
+        // htmlBody ko ab hum nahi bhej rahe hain taaki Apps Script wala UI hai
         names,
         phones,
         ticketNumber,
