@@ -71,7 +71,7 @@ app.post("/verify", async (req, res) => {
 
 
        // ✅ Send booking data to Google Apps Script
-    await fetch("https://script.google.com/macros/s/AKfycbyA7aAJFfGUn3vmBvqD7B_TawhQ3gltmu72CVPp9hxYvhX4N2WXyez5_p6q9zQatDn3nw/exec", {
+    await fetch("https://script.google.com/macros/s/AKfycbzhRiT2g1RW5vlgpMv_IO-EH9JHUVchk1LcF0ofUD-WTzUS1TnwWzihrgDa8dqPIloW/exec", {
       method: "POST",
       body: JSON.stringify(bookingData),
       headers: { "Content-Type": "application/json" }
