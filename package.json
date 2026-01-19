@@ -19,6 +19,8 @@
     "dotenv": "^17.2.3",
     "emailjs-com": "^3.2.0",
     "express": "^5.1.0",
+    "mongodb": "^7.0.0",
+    "mongoose": "^9.1.4",
     "node-fetch": "^2.7.0",
     "nodemailer": "^7.0.5",
     "nodemailer-sendgrid": "^1.0.3",

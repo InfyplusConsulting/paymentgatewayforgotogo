@@ -3,15 +3,38 @@ const express = require('express');
 const cors = require('cors');
 const crypto = require('crypto');
 const Razorpay = require('razorpay');
+// 1. Mongoose Require Karein (New Add-on)
+const mongoose = require('mongoose'); 
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// INCREASE PAYLOAD SIZE LIMIT (Important for uploading files/images)
-// const app = express();
+// ==================================================
+// 🟢 NEW: MONGODB CONNECTION & SCHEMA (Add-on)
+// ==================================================
+// Apne .env file me MONGO_URI variable add karein
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB Add-on Connected"))
+  .catch(err => console.error("❌ DB Connection Error:", err));
 
-// Change 50mb to 200mb
+// Booking Schema - Jo data hum save karenge
+const bookingSchema = new mongoose.Schema({
+  ticketNumber: { type: String, required: true }, // Ticket ID zaroori hai
+  paymentId: String,
+  paymentMethod: String,
+  amountPaid: Number,
+  billing: Object,   // Customer details
+  cart: Object,      // Package details
+  travelers: Array,  // Travelers list (with GitHub URLs)
+  createdAt: { type: Date, default: Date.now }
+});
+
+const Booking = mongoose.model('Booking', bookingSchema);
+// ==================================================
+
+
+// INCREASE PAYLOAD SIZE LIMIT
 app.use(express.json({ limit: '200mb' }));
 app.use(express.urlencoded({ limit: '200mb', extended: true }));
 
@@ -62,66 +85,33 @@ async function uploadToGitHub(base64Content, fileName) {
         if (!response.ok) {
             const errText = await response.text();
             console.error("GitHub Error:", errText);
-            return "Upload Failed"; // Fallback text
+            return "Upload Failed"; 
         }
 
         const data = await response.json();
-        return data.content.html_url; // This is the link we save to Sheet
+        return data.content.html_url; 
     } catch (error) {
         console.error("GitHub Upload Exception:", error);
         return "Upload Error";
     }
 }
 
-// // --- HELPER: PROCESS TRAVELER FILES ---
-// async function processTravelerFiles(travelers) {
-//     // Loop through travelers and check if they have a file to upload
-//     const updatedTravelers = await Promise.all(travelers.map(async (t) => {
-//         if (t.passportFileBase64) {
-//             const timestamp = Date.now();
-//             // Clean filename
-//             const cleanName = (t.name || 'traveler').replace(/[^a-zA-Z0-9]/g, "_");
-//             const fileName = `${timestamp}_${cleanName}.${t.fileExtension || 'png'}`;
-            
-//             // Upload to GitHub
-//             const fileUrl = await uploadToGitHub(t.passportFileBase64, fileName);
-            
-//             // Return updated traveler object (Remove huge base64 string, add clean URL)
-//             return {
-//                 ...t,
-//                 documentUrl: fileUrl,
-//                 passportFileBase64: undefined, // Remove heavy data
-//                 fileExtension: undefined
-//             };
-//         }
-//         return t; // Return as is if no file
-//     }));
-    
-//     return updatedTravelers;
-// }
-// --- HELPER: DELAY FUNCTION (To prevent GitHub blocking) ---
+// --- HELPER: DELAY FUNCTION ---
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// --- HELPER: PROCESS TRAVELER FILES (UPDATED: SEQUENTIAL & UNIQUE) ---
+// --- HELPER: PROCESS TRAVELER FILES ---
 async function processTravelerFiles(travelers) {
     const updatedTravelers = [];
-
-    // Loop through each traveler ONE BY ONE (Not parallel)
     for (let i = 0; i < travelers.length; i++) {
         const t = travelers[i];
 
         if (t.passportFileBase64) {
             const timestamp = Date.now();
-            // Clean Name
             const cleanName = (t.name || 'traveler').replace(/[^a-zA-Z0-9]/g, "_");
-            
-            // ⚠️ FIX 1: Add Index 'i' to guarantee unique name
-            // Format: Timestamp_Index_Name.png
             const fileName = `${timestamp}_${i}_${cleanName}.${t.fileExtension || 'png'}`;
             
             console.log(`Uploading file ${i+1}/${travelers.length}: ${fileName}`);
 
-            // Upload to GitHub
             const fileUrl = await uploadToGitHub(t.passportFileBase64, fileName);
             
             updatedTravelers.push({
@@ -131,15 +121,12 @@ async function processTravelerFiles(travelers) {
                 fileExtension: t.fileExtension
             });
 
-            // ⚠️ FIX 2: Wait 1 second before next upload to avoid Rate Limiting
             await delay(1000); 
 
         } else {
-            // No file, push as is
             updatedTravelers.push(t);
         }
     }
-    
     return updatedTravelers;
 }
 
@@ -192,9 +179,9 @@ app.post('/create-order', async (req, res) => {
   }
 });
 
-// == ROUTE 2: VERIFY PAYMENT (UPDATED FOR FILES) ==
+// == ROUTE 2: VERIFY PAYMENT (UPDATED WITH DB ADDON) ==
 app.post('/verify-payment', async (req, res) => {
-  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, travelers } = req.body;
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, travelers, ticketNumber, billing, cart } = req.body;
 
   const key_secret = process.env.RAZORPAY_KEY_SECRET;
   const hmac = crypto.createHmac('sha256', key_secret);
@@ -207,19 +194,38 @@ app.post('/verify-payment', async (req, res) => {
     // 1. Process Files (Upload to GitHub)
     const travelersWithUrls = await processTravelerFiles(travelers || []);
 
-    // 2. Send to Google Sheet (With URLs)
-    await addBookingToSheet({
+    const completeBookingData = {
       ...req.body,
-      travelers: travelersWithUrls, // Use the updated list
+      travelers: travelersWithUrls,
       paymentMethod: 'Razorpay',
       paymentId: razorpay_payment_id,
-    });
+    };
+
+    // 🟢 NEW: Save to MongoDB (Backup for Ticket Download)
+    try {
+        const newTicket = new Booking({
+            ticketNumber: ticketNumber, // Frontend se aana chahiye
+            paymentId: razorpay_payment_id,
+            paymentMethod: 'Razorpay',
+            amountPaid: cart?.totalPrice || 0,
+            billing: billing,
+            cart: cart,
+            travelers: travelersWithUrls
+        });
+        await newTicket.save();
+        console.log("✅ [DB] Ticket Data Saved:", ticketNumber);
+    } catch (dbErr) {
+        console.error("❌ [DB Error] Failed to save ticket:", dbErr.message);
+        // Hum yahan process ko stop nahi karenge, Sheet me data jane denge
+    }
+
+    // 2. Send to Google Sheet (Main System)
+    await addBookingToSheet(completeBookingData);
 
     // 3. Respond to Frontend
     res.json({ 
         success: true, 
         message: 'Payment verified & booking processed.',
-        // Return travelers with URLs so frontend can use them if needed
         travelers: travelersWithUrls 
     });
   } else {
@@ -228,21 +234,42 @@ app.post('/verify-payment', async (req, res) => {
   }
 });
 
-// == ROUTE 3: CASH BOOKING (UPDATED FOR FILES) ==
+// == ROUTE 3: CASH BOOKING (UPDATED WITH DB ADDON) ==
 app.post('/book-cash', async (req, res) => {
   console.log('Cash booking received. Processing files...');
 
   try {
-    // 1. Process Files (Upload to GitHub)
-    const travelersWithUrls = await processTravelerFiles(req.body.travelers || []);
+    const { travelers, ticketNumber, billing, cart } = req.body;
 
-    // 2. Send to Google Sheet (With URLs)
-    await addBookingToSheet({
-      ...req.body,
-      travelers: travelersWithUrls, // Use the updated list
-      paymentMethod: 'Cash',
-      paymentId: 'N/A',
-    });
+    // 1. Process Files
+    const travelersWithUrls = await processTravelerFiles(travelers || []);
+
+    const completeBookingData = {
+        ...req.body,
+        travelers: travelersWithUrls,
+        paymentMethod: 'Cash',
+        paymentId: 'N/A',
+    };
+
+    // 🟢 NEW: Save to MongoDB
+    try {
+        const newTicket = new Booking({
+            ticketNumber: ticketNumber,
+            paymentId: 'N/A',
+            paymentMethod: 'Cash',
+            amountPaid: cart?.totalPrice || 0,
+            billing: billing,
+            cart: cart,
+            travelers: travelersWithUrls
+        });
+        await newTicket.save();
+        console.log("✅ [DB] Cash Ticket Data Saved:", ticketNumber);
+    } catch (dbErr) {
+        console.error("❌ [DB Error] Failed to save cash ticket:", dbErr.message);
+    }
+
+    // 2. Send to Google Sheet
+    await addBookingToSheet(completeBookingData);
 
     res.json({ success: true, message: 'Cash booking processed successfully.' });
   } catch (error) {
@@ -254,12 +281,32 @@ app.post('/book-cash', async (req, res) => {
   }
 });
 
-// 👇👇👇 CHANGE THIS PART 👇👇👇
+// ==================================================
+// 🟢 NEW: PUBLIC TICKET API (Missing Route)
+// ==================================================
+app.get("/api/ticket/:ticketId", async (req, res) => {
+  try {
+    const tId = req.params.ticketId;
+    
+    // Database me search karo
+    // Note: Agar aapne Booking define nahi kiya hai upar, to ensure karein ki 
+    // const Booking = mongoose.model(...) file ke top par ho.
+    const ticketData = await mongoose.model('Booking').findOne({ ticketNumber: tId });
 
-// Assign the result to a variable named 'server'
+    if (ticketData) {
+      res.json({ success: true, booking: ticketData });
+    } else {
+      res.status(404).json({ success: false, message: "Ticket not found in database." });
+    }
+  } catch (err) {
+    console.error("Ticket Fetch Error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Start Server
 const server = app.listen(PORT, () => {
   console.log(`Server is running successfully on http://localhost:${PORT}`);
 });
 
-// Now 'server' exists, so this line will work
 server.setTimeout(300000); // 5 Minutes Timeout
