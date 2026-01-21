@@ -1,8 +1,9 @@
-// sendBookingEmail.js
+// utils/sendBookingEmail.js
 require("dotenv").config();
 const fetch = require("node-fetch");
 
-const GS_URL = "https://script.google.com/macros/s/AKfycby0JIhL3FcefOFxHufQkAyFRKzR1KguBb1BXc7jJnWfS0WvqjaZCos3xA84m-ABlJO9Ag/exec";
+// Google Apps Script URL (Airport Shuttle dedicated script)
+const GS_URL = "https://script.google.com/macros/s/AKfycbwZhQQqI8KxNps_pOU5kx8cQDteddKf2YbnhlW0MID1LsXwVv15ZZrLkPUobb5X7a_o/exec";
 
 async function sendBookingEmail(bookingData, toEmail, isAdmin = false) {
   const {
@@ -18,12 +19,12 @@ async function sendBookingEmail(bookingData, toEmail, isAdmin = false) {
     paymentId,
   } = bookingData;
 
+  // 1. Dynamic Ticket Link जनरेट करें (your-ticket.html के लिए)
+  const ticketLink = `https://www.gotogotravelsolutions.com/your-ticket.html?ticket=${ticketNumber}`;
+
   const emailSubject = isAdmin
     ? `🛎️ New Booking - Ticket #${ticketNumber}`
     : `🎫 Booking Confirmed - Ticket #${ticketNumber}`;
-
-  // ✅ Yahan se humne htmlContent hata diya hai
-  // Ab Apps Script automatically apna naya UI pick karega
 
   try {
     const response = await fetch(GS_URL, {
@@ -33,7 +34,7 @@ async function sendBookingEmail(bookingData, toEmail, isAdmin = false) {
         apiKey: process.env.GS_API_KEY,
         to: toEmail,
         subject: emailSubject,
-        // htmlBody ko ab hum nahi bhej rahe hain taaki Apps Script wala UI hai
+        ticketLink: ticketLink, // 2. Apps Script को यह नया लिंक भेजें
         names,
         phones,
         ticketNumber,
