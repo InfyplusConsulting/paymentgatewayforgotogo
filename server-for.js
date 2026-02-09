@@ -167,15 +167,93 @@ async function addBookingToSheet(bookingDetails) {
 }
 
 // == ROUTE 1: CREATE ORDER ==
+// == ROUTE 1: CREATE ORDER (Backend Conversion: USD -> INR) ==
+// app.post('/create-order', async (req, res) => {
+//   // Frontend se humein sirf 'amount' (USD) chahiye. 'currency' hum khud set karenge.
+//   const { amount, receipt } = req.body;
+
+//   if (!amount) {
+//     return res.status(400).json({ error: "Amount is required" });
+//   }
+
+//   try {
+//     console.log(`Processing USD Amount: $${amount}`);
+
+//     // ---------------------------------------------------------
+//     // STEP 1: Backend par Real-Time Conversion (USD to INR)
+//     // ---------------------------------------------------------
+//     const response = await fetch(`https://api.frankfurter.app/latest?amount=${amount}&from=USD&to=INR`);
+    
+//     if (!response.ok) {
+//       throw new Error("Currency conversion API failed");
+//     }
+
+//     const data = await response.json();
+//     const inrValue = data.rates.INR; // Example: 4500 (Rupees)
+
+//     console.log(`Converted to INR: ₹${inrValue}`);
+
+//     // ---------------------------------------------------------
+//     // STEP 2: Razorpay Order Creation
+//     // ---------------------------------------------------------
+//     const options = {
+//       amount: Math.round(inrValue * 100), // Rupees ko Paise mein badla (4500 * 100)
+//       currency: "INR",                    // Currency hamesha INR rahegi
+//       receipt: receipt || `receipt_${Date.now()}`
+//     };
+
+//     const order = await razorpay.orders.create(options);
+    
+//     // Frontend ko order bhej diya
+//     res.json(order);
+
+//   } catch (error) {
+//     console.error('Error creating Razorpay order:', error.message);
+//     res.status(500).json({ error: 'Error creating order' });
+//   }
+// });
+
+// == ROUTE 1: CREATE ORDER (FIXED: Handles 25000 as 250 USD) ==
 app.post('/create-order', async (req, res) => {
-  const { amount, currency, receipt } = req.body;
-  const options = { amount, currency, receipt };
+  const { amount, receipt } = req.body; // Frontend se 25000 aa raha hai
+
+  if (!amount) return res.status(400).json({ error: "Amount is required" });
+
   try {
+    // 🟢 FIX: Agar value badi hai (jaise 25000), to usko 100 se divide karke Dollar banao
+    // Logic: 25000 / 100 = 250 USD
+    let usdAmount = amount;
+    if (amount > 1000) {
+        usdAmount = amount / 100;
+    }
+
+    console.log(`Step 1: Frontend sent ${amount}. Treated as $${usdAmount} USD.`);
+
+    // 🟢 API CALL (Ab ye $250 ka rate mangega)
+    const apiResponse = await fetch(`https://api.frankfurter.app/latest?amount=${usdAmount}&from=USD&to=INR`);
+    
+    if (!apiResponse.ok) {
+      throw new Error("Currency conversion API failed");
+    }
+
+    const data = await apiResponse.json();
+    const inrValue = data.rates.INR; // Ab ye ~22666 aayega
+
+    console.log(`Step 2: Converted $${usdAmount} USD -> ₹${inrValue} INR`);
+
+    // 🟢 RAZORPAY ORDER (Paise mein convert karke bhejo)
+    const options = {
+      amount: Math.round(inrValue * 100), // 22666 * 100 = 2266600 paise
+      currency: "INR",
+      receipt: receipt || `receipt_${Date.now()}`,
+    };
+
     const order = await razorpay.orders.create(options);
     res.json(order);
+
   } catch (error) {
-    console.error('Error creating Razorpay order:', error);
-    res.status(500).send('Error creating order');
+    console.error('❌ Error:', error.message);
+    res.status(500).json({ error: 'Order creation failed' });
   }
 });
 
