@@ -58,7 +58,14 @@ app.post("/api/create-order", async (req, res) => {
   if (!amount) return res.status(400).json({ error: "Amount is required" });
 
   try {
-    const amountInPaise = Math.round(Number(amount) * 100);
+    const response = await fetch(`https://api.frankfurter.app/latest?amount=${amount}&from=USD&to=INR`);
+    const data = await response.json();
+    
+    // 2. Converted INR value nikalna
+    const amountInINR = data.rates.INR; // Example: Agar $50 hai to yahan approx 4300 aayega
+    
+    console.log(`USD Amount: $${amount}, Converted INR: ₹${amountInINR}`);
+    const amountInPaise = Math.round(Number(amountInINR) * 100);
     const options = {
       amount: amountInPaise,
       currency: "INR",
